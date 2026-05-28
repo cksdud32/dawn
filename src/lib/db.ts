@@ -1,14 +1,9 @@
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { neonConfig } from "@neondatabase/serverless";
-import ws from "ws";
-
-// Required for Neon serverless driver in Node.js environment
-neonConfig.webSocketConstructor = ws;
+import { PrismaPg } from "@prisma/adapter-pg";
 
 function createPrismaClient() {
   const connectionString = process.env.POSTGRES_PRISMA_URL ?? process.env.DATABASE_URL!;
-  const adapter = new PrismaNeon({ connectionString });
+  const adapter = new PrismaPg({ connectionString });
   return new PrismaClient({ adapter });
 }
 
