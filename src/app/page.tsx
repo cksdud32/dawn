@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentPhase, getKSTDate, isPostPublic, minutesUntilClose, secondsUntilOpen } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { PostCard } from "@/components/PostCard";
+import { AutoRefresh } from "@/components/AutoRefresh";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#faf8f4] dark:bg-[#07070e] text-stone-800 dark:text-white">
+      <AutoRefresh />
       <Header
         anonName={session.anonName}
         phase={phase}

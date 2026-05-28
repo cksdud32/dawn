@@ -36,17 +36,33 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [phase, setPhase] = useState<ThemePhase>("forced-dark");
 
   useEffect(() => {
-    const hour = getKSTHour();
-    const p = getPhase(hour);
-    setPhase(p);
+    function applyPhase() {
+      const hour = getKSTHour();
+      const p = getPhase(hour);
+      setPhase(p);
 
-    let t: ThemeMode;
-    if (p === "forced-dark") t = "dark";
-    else if (p === "forced-light") t = "light";
-    else t = (localStorage.getItem("dawn-theme") as ThemeMode) ?? "dark";
+      let t: ThemeMode;
+      if (p === "forced-dark") t = "dark";
+      else if (p === "forced-light") t = "light";
+      else t = (localStorage.getItem("dawn-theme") as ThemeMode) ?? "dark";
 
-    setTheme(t);
-    document.documentElement.classList.toggle("dark", t === "dark");
+      setTheme(t);
+      document.documentElement.classList.toggle("dark", t === "dark");
+    }
+
+    applyPhase();
+
+    // 매 초 체크해서 시간대 바뀌면 테마 자동 전환
+    let lastHour = getKSTHour();
+    const interval = setInterval(() => {
+      const hour = getKSTHour();
+      if (hour !== lastHour) {
+        lastHour = hour;
+        applyPhase();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const toggle = () => {
