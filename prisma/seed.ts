@@ -1,12 +1,15 @@
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import path from "path";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import { neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
+import "dotenv/config";
 
-const adapter = new PrismaBetterSqlite3({ url: path.resolve(process.cwd(), "dev.db") });
+neonConfig.webSocketConstructor = ws;
+
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  // Create test users
   const u1 = await prisma.user.upsert({
     where: { sessionKey: "test-session-1" },
     update: {},
@@ -23,7 +26,6 @@ async function main() {
     create: { sessionKey: "test-session-3", anonName: "안개토끼#9012" },
   });
 
-  // Create past posts (public)
   const yesterday = "2026-05-27";
   const posts = [
     {

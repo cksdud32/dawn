@@ -5,11 +5,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
-  serverExternalPackages: [
-    "@libsql/client",
-    "@prisma/adapter-libsql",
-    "@prisma/client",
-  ],
+  serverExternalPackages: ["@neondatabase/serverless", "ws"],
 };
 
 export default nextConfig;
