@@ -73,6 +73,17 @@ export async function POST(req: NextRequest) {
 
   const dawnDate = getKSTDate();
 
+  // 오늘 새벽 이미 쓴 글이 있으면 차단
+  const existing = await prisma.post.findFirst({
+    where: { userId: session.userId, dawnDate },
+  });
+  if (existing) {
+    return NextResponse.json(
+      { error: "오늘 새벽에는 이미 기록했습니다.", existingId: existing.id },
+      { status: 409 }
+    );
+  }
+
   const post = await prisma.post.create({
     data: {
       userId: session.userId,

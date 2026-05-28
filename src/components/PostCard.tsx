@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MoodBadge } from "./MoodBadge";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -21,7 +22,16 @@ interface Post {
 }
 
 export function PostCard({ post }: { post: Post }) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!confirm("정말 삭제할까요?")) return;
+    setDeleting(true);
+    await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
+    router.refresh();
+  }
   const preview = post.content.slice(0, 120);
   const needsTruncate = post.content.length > 120;
   const timeStr = format(new Date(post.createdAt), "HH:mm", { locale: ko });
@@ -71,11 +81,25 @@ export function PostCard({ post }: { post: Post }) {
 
       <div className="flex items-center justify-between pt-1">
         <span className="text-xs text-fg5">{post.dawnDate} 새벽</span>
-        {post.isPublic && (
-          <Link href={`/post/${post.id}`} className="text-xs text-fg4 hover:text-fg2 transition-colors">
-            댓글 {post.commentCount > 0 ? post.commentCount : ""} →
-          </Link>
-        )}
+        <div className="flex items-center gap-3">
+          {post.isOwn && !post.isPublic && (
+            <Link href="/write" className="text-xs text-fg4 hover:text-fg2 transition-colors">수정</Link>
+          )}
+          {post.isOwn && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-xs text-red-400/60 hover:text-red-400 transition-colors disabled:opacity-40"
+            >
+              {deleting ? "삭제 중…" : "삭제"}
+            </button>
+          )}
+          {post.isPublic && (
+            <Link href={`/post/${post.id}`} className="text-xs text-fg4 hover:text-fg2 transition-colors">
+              댓글 {post.commentCount > 0 ? post.commentCount : ""} →
+            </Link>
+          )}
+        </div>
       </div>
     </article>
   );
