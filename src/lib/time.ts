@@ -1,11 +1,11 @@
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
-import { format, addDays, parseISO } from "date-fns";
+import { format, addDays, parseISO } from "date-fns"; // addDays used in secondsUntilOpen
 
 const KST = "Asia/Seoul";
 
 export const WRITING_START_HOUR = 0;  // 00:00 KST
 export const WRITING_END_HOUR = 5;    // 05:00 KST (exclusive)
-export const PUBLIC_HOUR = 6;         // 06:00 KST next day
+export const PUBLIC_HOUR = 6;         // 06:00 KST same day
 
 export function getKSTNow(): Date {
   return toZonedTime(new Date(), KST);
@@ -27,12 +27,9 @@ export function isWritingWindow(date?: Date): boolean {
   return hour >= WRITING_START_HOUR && hour < WRITING_END_HOUR;
 }
 
-// Posts from dawnDate become public at 06:00 KST the next day
-// = dawnDate + 1day at 06:00 KST
+// Posts from dawnDate become public at 06:00 KST on the same day
 export function getPublicAtUTC(dawnDate: string): Date {
-  const nextDay = addDays(parseISO(dawnDate), 1);
-  const nextDayStr = format(nextDay, "yyyy-MM-dd");
-  return fromZonedTime(`${nextDayStr}T${PUBLIC_HOUR.toString().padStart(2, "0")}:00:00`, KST);
+  return fromZonedTime(`${dawnDate}T${PUBLIC_HOUR.toString().padStart(2, "0")}:00:00`, KST);
 }
 
 export function isPostPublic(dawnDate: string, now?: Date): boolean {
