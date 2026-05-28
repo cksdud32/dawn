@@ -1,64 +1,122 @@
-import Image from "next/image";
+import { getOrCreateSession } from "@/lib/session";
+import { prisma } from "@/lib/db";
+import {
+  getCurrentPhase,
+  getKSTDate,
+  isPostPublic,
+  minutesUntilClose,
+  secondsUntilOpen,
+} from "@/lib/time";
+import { Header } from "@/components/Header";
+import { PostCard } from "@/components/PostCard";
+import Link from "next/link";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const session = await getOrCreateSession();
+  const phase = getCurrentPhase();
+  const todayKST = getKSTDate();
+  const now = new Date();
+
+  const rawPosts = await prisma.post.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 80,
+    include: { _count: { select: { comments: true } } },
+  });
+
+  const posts = rawPosts
+    .map((post) => {
+      const public_ = isPostPublic(post.dawnDate, now);
+      const isOwn = post.userId === session.userId;
+      if (!public_ && !isOwn) return null;
+      return {
+        id: post.id,
+        content: post.content,
+        mood: post.mood,
+        musicTitle: post.musicTitle,
+        musicArtist: post.musicArtist,
+        dawnDate: post.dawnDate,
+        createdAt: post.createdAt.toISOString(),
+        isOwn,
+        isPublic: public_,
+        commentCount: post._count.comments,
+        commentsEnabled: public_,
+      };
+    })
+    .filter(Boolean) as {
+      id: string; content: string; mood: string | null; musicTitle: string | null;
+      musicArtist: string | null; dawnDate: string; createdAt: string;
+      isOwn: boolean; isPublic: boolean; commentCount: number; commentsEnabled: boolean;
+    }[];
+
+  const myTodayPosts = posts.filter((p) => p.isOwn && p.dawnDate === todayKST && !p.isPublic);
+  const publicPosts = posts.filter((p) => p.isPublic);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-[#07070e] text-white">
+      <Header
+        anonName={session.anonName}
+        phase={phase}
+        minutesUntilClose={phase === "WRITING" ? minutesUntilClose() : null}
+        secondsUntilOpen={phase === "LOCKED" ? secondsUntilOpen() : null}
+      />
+
+      <main className="max-w-xl mx-auto px-4 py-8 space-y-10">
+        {/* Writing window CTA */}
+        {phase === "WRITING" && (
+          <div className="rounded-2xl border border-amber-400/15 bg-amber-400/5 p-6 text-center space-y-3">
+            <p className="text-amber-200/60 text-sm">지금은 새벽입니다</p>
+            <p className="text-white/70 text-base">이 순간의 감정을 기록해두세요</p>
+            <p className="text-white/35 text-xs">아침 06:00이 되면 모두에게 공개됩니다</p>
+            <Link
+              href="/write"
+              className="inline-block mt-2 px-6 py-2.5 rounded-xl bg-amber-400/15 border border-amber-400/25 text-amber-300 hover:bg-amber-400/25 transition-colors text-sm"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+              지금 기록하기
+            </Link>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {phase === "LOCKED" && myTodayPosts.length === 0 && publicPosts.length === 0 && (
+          <div className="text-center py-24 space-y-4">
+            <p className="text-5xl opacity-15">🌙</p>
+            <p className="text-white/30 text-sm">자정이 되면 새벽 창이 열립니다</p>
+            <p className="text-white/20 text-xs">00:00 ~ 05:00 KST</p>
+          </div>
+        )}
+
+        {/* My today's private posts */}
+        {myTodayPosts.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-xs uppercase tracking-widest text-white/25 px-1">
+              오늘 새벽 · 내 기록
+            </h2>
+            <div className="space-y-3">
+              {myTodayPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+            <p className="text-xs text-white/20 text-center pt-1">
+              내일 아침 06:00 이후 모두에게 공개됩니다
+            </p>
+          </section>
+        )}
+
+        {/* Public posts */}
+        {publicPosts.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-xs uppercase tracking-widest text-white/25 px-1">
+              새벽의 기록들
+            </h2>
+            <div className="space-y-3">
+              {publicPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
