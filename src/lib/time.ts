@@ -90,10 +90,20 @@ export function moonOpacity(date?: Date): number {
   return Math.max(0, 1 - elapsed / 3600);
 }
 
+// 21:00~23:59 구간에서 달 떠오르는 투명도 (0.0 → 1.0)
+export function moonRiseOpacity(date?: Date): number {
+  const kst = toZonedTime(date ?? new Date(), KST);
+  const hour = kst.getHours();
+  if (hour < 21) return 0;
+  const elapsed = (hour - 21) * 3600 + kst.getMinutes() * 60 + kst.getSeconds();
+  return Math.min(1, elapsed / (3 * 3600));
+}
+
 export type TimePhase =
   | "WRITING"    // 00:00~04:59 KST
-  | "REVEALING"  // 05:00~05:59 KST — 달이 지는 시간, 공개 카운트다운
-  | "LOCKED"     // 06:00~23:59 KST
+  | "REVEALING"  // 05:00~05:59 KST — 달이 지는 시간
+  | "LOCKED"     // 06:00~20:59 KST — 공개 피드
+  | "EVENING"    // 21:00~23:59 KST — 달이 뜨는 시간
   | "OPEN";
 
 export function getCurrentPhase(date?: Date): TimePhase {
@@ -101,5 +111,6 @@ export function getCurrentPhase(date?: Date): TimePhase {
   const hour = getKSTHour(now);
   if (hour >= WRITING_START_HOUR && hour < WRITING_END_HOUR) return "WRITING";
   if (hour >= REVEALING_START_HOUR && hour < PUBLIC_HOUR) return "REVEALING";
+  if (hour >= 21) return "EVENING";
   return "LOCKED";
 }

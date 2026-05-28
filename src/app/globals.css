@@ -1,30 +1,50 @@
 @import "tailwindcss";
 
-/* Class-based dark mode for Tailwind 4 */
-@custom-variant dark (&:where(.dark, .dark *));
-
+/* CSS 변수 초기값 (라이트 모드) — ThemeProvider가 JS로 실시간 업데이트 */
 :root {
-  --bg: #faf8f4;
-  --fg: #292524;
-}
-
-.dark {
-  --bg: #07070e;
-  --fg: rgba(255, 255, 255, 0.75);
+  --c-bg:     250 248 244;
+  --c-fg1:    41  37  36;
+  --c-fg2:    87  83  78;
+  --c-fg3:    120 113 108;
+  --c-fg4:    168 162 158;
+  --c-fg5:    214 211 209;
+  --c-border: 231 229 228;
+  --c-card:   245 245 244;
+  --c-hover:  231 229 228;
+  --c-input:  255 255 255;
 }
 
 body {
-  background: var(--bg);
-  color: var(--fg);
+  background-color: rgb(var(--c-bg));
+  color: rgb(var(--c-fg1));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background 0.4s ease, color 0.4s ease;
 }
 
+/* 시맨틱 유틸리티 클래스 */
+@utility bg-surface   { background-color: rgb(var(--c-bg)); }
+@utility bg-header    { background-color: rgb(var(--c-bg) / 0.8); }
+@utility bg-card      { background-color: rgb(var(--c-card)); }
+@utility bg-card-hover { background-color: rgb(var(--c-hover)); }
+@utility bg-input     { background-color: rgb(var(--c-input)); }
+
+@utility text-fg1 { color: rgb(var(--c-fg1)); }
+@utility text-fg2 { color: rgb(var(--c-fg2)); }
+@utility text-fg3 { color: rgb(var(--c-fg3)); }
+@utility text-fg4 { color: rgb(var(--c-fg4)); }
+@utility text-fg5 { color: rgb(var(--c-fg5)); }
+
+@utility border-line { border-color: rgb(var(--c-border)); }
+
+/* placeholder는 @utility 중첩 미지원으로 직접 정의 */
+.placeholder-fg5::placeholder { color: rgb(var(--c-fg5)); }
+
+/* focus border */
+.focus-border-line:focus { border-color: rgb(var(--c-border)); outline: none; }
+
+/* 스크롤바 */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.2); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.15); border-radius: 2px; }
 
-::selection {
-  background: rgba(251,191,36,0.25);
-}
+::selection { background: rgba(251,191,36,0.25); }
