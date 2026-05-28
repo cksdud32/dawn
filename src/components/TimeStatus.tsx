@@ -28,18 +28,12 @@ export function TimeStatus({ initialPhase, minutesUntilClose, secondsUntilOpen }
     const interval = setInterval(() => {
       if (phase === "WRITING") {
         setCloseSecondsLeft((s) => {
-          if (s <= 1) {
-            setPhase("LOCKED");
-            return 0;
-          }
+          if (s <= 1) { setPhase("LOCKED"); return 0; }
           return s - 1;
         });
       } else if (phase === "LOCKED") {
         setOpenSecondsLeft((s) => {
-          if (s <= 1) {
-            setPhase("WRITING");
-            return 0;
-          }
+          if (s <= 1) { setPhase("WRITING"); return 0; }
           return s - 1;
         });
       }
@@ -51,7 +45,7 @@ export function TimeStatus({ initialPhase, minutesUntilClose, secondsUntilOpen }
     return (
       <div className="flex items-center gap-2 text-sm">
         <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-        <span className="text-amber-300/80">
+        <span className="text-amber-600 dark:text-amber-300/80">
           새벽 창이 열려 있어요 — {formatCountdown(closeSecondsLeft)} 남음
         </span>
       </div>
@@ -60,8 +54,8 @@ export function TimeStatus({ initialPhase, minutesUntilClose, secondsUntilOpen }
 
   return (
     <div className="flex items-center gap-2 text-sm">
-      <span className="w-2 h-2 rounded-full bg-slate-600" />
-      <span className="text-slate-500">
+      <span className="w-2 h-2 rounded-full bg-stone-300 dark:bg-slate-600" />
+      <span className="text-stone-400 dark:text-slate-500">
         글쓰기 잠김 — 다음 새벽까지 {formatCountdown(openSecondsLeft)}
       </span>
     </div>

@@ -17,7 +17,7 @@ export function MoodBadge({ mood }: { mood: string | null }) {
   if (!mood) return null;
   const found = MOODS.find((m) => m.value === mood);
   return (
-    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-white/5 text-white/50 border border-white/10">
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-stone-100 dark:bg-white/5 text-stone-500 dark:text-white/50 border border-stone-200 dark:border-white/10">
       {found?.emoji} {mood}
     </span>
   );
