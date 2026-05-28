@@ -1,5 +1,5 @@
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
-import { format, addDays } from "date-fns";
+import { format, addDays, parseISO } from "date-fns";
 
 const KST = "Asia/Seoul";
 
@@ -36,8 +36,24 @@ export function isPostPublic(dawnDate: string, now?: Date): boolean {
   return checkAt >= getPublicAtUTC(dawnDate);
 }
 
+// 댓글 창: 공개 후 2일(다다음날 06:00) 이내 + 새벽(00:00~05:59) 제외
 export function areCommentsEnabled(dawnDate: string, now?: Date): boolean {
-  return isPostPublic(dawnDate, now);
+  const checkAt = now ?? new Date();
+
+  // 아직 공개 전
+  if (!isPostPublic(dawnDate, checkAt)) return false;
+
+  // 새벽 시간 (00:00~05:59 KST) 제외
+  const hour = getKSTHour(checkAt);
+  if (hour < PUBLIC_HOUR) return false;
+
+  // 공개 후 2일(dawnDate+2 06:00 KST)까지만 허용
+  const closeDate = format(addDays(parseISO(dawnDate), 2), "yyyy-MM-dd");
+  const commentCloseAt = fromZonedTime(
+    `${closeDate}T${PUBLIC_HOUR.toString().padStart(2, "0")}:00:00`,
+    KST
+  );
+  return checkAt < commentCloseAt;
 }
 
 export function minutesUntilClose(date?: Date): number {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
@@ -24,6 +24,21 @@ export function CommentSection({ postId, initialComments, commentsEnabled, dawnD
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [kstMinutes, setKstMinutes] = useState(() => {
+    const kst = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+    return kst.getHours() * 60 + kst.getMinutes();
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const kst = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+      setKstMinutes(kst.getHours() * 60 + kst.getMinutes());
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 23:50~23:59 경고
+  const nearMidnight = kstMinutes >= 23 * 60 + 50 && kstMinutes < 24 * 60;
 
   async function submitComment(e: React.FormEvent) {
     e.preventDefault();
@@ -46,10 +61,22 @@ export function CommentSection({ postId, initialComments, commentsEnabled, dawnD
   }
 
   if (!commentsEnabled) {
+    const nowHour = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" })).getHours();
+    const isDawn = nowHour >= 0 && nowHour < 6;
+
     return (
-      <div className="border-t border-stone-200 dark:border-white/8 pt-6 text-center">
-        <p className="text-stone-400 dark:text-white/25 text-sm">댓글은 공개 이후 작성할 수 있습니다</p>
-        <p className="text-stone-300 dark:text-white/15 text-xs mt-1">{dawnDate} 다음날 06:00 이후</p>
+      <div className="border-t border-stone-200 dark:border-white/8 pt-6 text-center space-y-1">
+        {isDawn ? (
+          <>
+            <p className="text-stone-400 dark:text-white/25 text-sm">새벽에는 댓글을 달 수 없어요</p>
+            <p className="text-stone-300 dark:text-white/15 text-xs">06:00 이후 다시 열립니다</p>
+          </>
+        ) : (
+          <>
+            <p className="text-stone-400 dark:text-white/25 text-sm">댓글 창이 닫혔습니다</p>
+            <p className="text-stone-300 dark:text-white/15 text-xs">공개 후 2일 이내에만 작성할 수 있어요</p>
+          </>
+        )}
       </div>
     );
   }
@@ -79,6 +106,12 @@ export function CommentSection({ postId, initialComments, commentsEnabled, dawnD
           </div>
         ))}
       </div>
+
+      {nearMidnight && (
+        <div className="rounded-xl bg-amber-50 dark:bg-amber-400/5 border border-amber-200 dark:border-amber-400/15 px-4 py-2.5 text-xs text-amber-600 dark:text-amber-300/70 text-center">
+          자정(00:00)부터는 댓글을 달 수 없어요
+        </div>
+      )}
 
       <form onSubmit={submitComment} className="space-y-2">
         <textarea
