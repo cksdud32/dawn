@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getOrCreateSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { isPostPublic, areCommentsEnabled } from "@/lib/time";
+import { isPostPublic, areCommentsEnabled, getCurrentPhase, minutesUntilClose, secondsUntilOpen, secondsUntilPublic } from "@/lib/time";
 import { MoodBadge } from "@/components/MoodBadge";
 import { CommentSection } from "@/components/CommentSection";
+import { Header } from "@/components/Header";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
@@ -14,6 +14,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const session = await getOrCreateSession();
   const now = new Date();
+  const phase = getCurrentPhase();
 
   const post = await prisma.post.findUnique({
     where: { id },
@@ -33,10 +34,18 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   if (!public_ && !isOwn) {
     return (
-      <div className="min-h-screen bg-surface flex flex-col items-center justify-center gap-4 text-center px-6">
-        <p className="text-4xl opacity-20">🔒</p>
-        <p className="text-fg3">아직 공개되지 않은 글입니다</p>
-        <Link href="/" className="text-sm text-fg4 hover:text-fg2 underline underline-offset-4">돌아가기</Link>
+      <div className="min-h-screen bg-surface text-fg1">
+        <Header
+          anonName={session.anonName}
+          phase={phase}
+          minutesUntilClose={phase === "WRITING" ? minutesUntilClose() : null}
+          secondsUntilOpen={phase === "LOCKED" || phase === "EVENING" ? secondsUntilOpen() : null}
+          secondsUntilPublic={phase === "REVEALING" ? secondsUntilPublic() : null}
+        />
+        <div className="flex flex-col items-center justify-center gap-4 text-center px-6 py-32">
+          <p className="text-4xl opacity-20">🔒</p>
+          <p className="text-fg3">아직 공개되지 않은 글입니다</p>
+        </div>
       </div>
     );
   }
@@ -52,8 +61,14 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-surface text-fg1">
+      <Header
+        anonName={session.anonName}
+        phase={phase}
+        minutesUntilClose={phase === "WRITING" ? minutesUntilClose() : null}
+        secondsUntilOpen={phase === "LOCKED" || phase === "EVENING" ? secondsUntilOpen() : null}
+        secondsUntilPublic={phase === "REVEALING" ? secondsUntilPublic() : null}
+      />
       <div className="max-w-xl mx-auto px-4 py-10">
-        <Link href="/" className="text-sm text-fg4 hover:text-fg2 mb-8 block">← 돌아가기</Link>
 
         <article className="space-y-4 mb-12">
           <div className="flex items-center gap-3">
