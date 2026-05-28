@@ -4,12 +4,13 @@ import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
   anonName: string;
-  phase: "WRITING" | "LOCKED" | "OPEN";
+  phase: "WRITING" | "REVEALING" | "LOCKED" | "OPEN";
   minutesUntilClose?: number | null;
   secondsUntilOpen?: number | null;
+  secondsUntilPublic?: number | null;
 }
 
-export function Header({ anonName, phase, minutesUntilClose, secondsUntilOpen }: HeaderProps) {
+export function Header({ anonName, phase, minutesUntilClose, secondsUntilOpen, secondsUntilPublic }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200 dark:border-white/8 bg-[#faf8f4]/80 dark:bg-[#07070e]/80 backdrop-blur-md">
       <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -21,6 +22,7 @@ export function Header({ anonName, phase, minutesUntilClose, secondsUntilOpen }:
             initialPhase={phase}
             minutesUntilClose={minutesUntilClose}
             secondsUntilOpen={secondsUntilOpen}
+            secondsUntilPublic={secondsUntilPublic}
           />
           <span className="text-xs text-stone-400 dark:text-white/30 hidden sm:block">{anonName}</span>
           <ThemeToggle />

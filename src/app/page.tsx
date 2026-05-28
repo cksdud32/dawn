@@ -1,9 +1,13 @@
 import { getOrCreateSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { getCurrentPhase, getKSTDate, isPostPublic, minutesUntilClose, secondsUntilOpen } from "@/lib/time";
+import {
+  getCurrentPhase, getKSTDate, isPostPublic,
+  minutesUntilClose, secondsUntilOpen, secondsUntilPublic, moonOpacity,
+} from "@/lib/time";
 import { Header } from "@/components/Header";
 import { PostCard } from "@/components/PostCard";
 import { AutoRefresh } from "@/components/AutoRefresh";
+import { RevealingState } from "@/components/RevealingState";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -47,9 +51,11 @@ export default async function HomePage() {
         phase={phase}
         minutesUntilClose={phase === "WRITING" ? minutesUntilClose() : null}
         secondsUntilOpen={phase === "LOCKED" ? secondsUntilOpen() : null}
+        secondsUntilPublic={phase === "REVEALING" ? secondsUntilPublic() : null}
       />
 
       <main className="max-w-xl mx-auto px-4 py-8 space-y-10">
+        {/* 새벽 — 글쓰기 가능 */}
         {phase === "WRITING" && (
           <div className="rounded-2xl border border-amber-200 dark:border-amber-400/15 bg-amber-50 dark:bg-amber-400/5 p-6 text-center space-y-3">
             <p className="text-amber-600 dark:text-amber-200/60 text-sm">지금은 새벽입니다</p>
@@ -64,6 +70,16 @@ export default async function HomePage() {
           </div>
         )}
 
+        {/* 05:00~06:00 — 달이 지는 시간 */}
+        {phase === "REVEALING" && (
+          <RevealingState
+            initialSeconds={secondsUntilPublic()}
+            initialOpacity={moonOpacity()}
+            // postCount={myTodayPosts.length}
+          />
+        )}
+
+        {/* 잠김 — 빈 화면 */}
         {phase === "LOCKED" && myTodayPosts.length === 0 && publicPosts.length === 0 && (
           <div className="text-center py-24 space-y-4">
             <p className="text-5xl opacity-15">🌙</p>
@@ -72,16 +88,18 @@ export default async function HomePage() {
           </div>
         )}
 
-        {myTodayPosts.length > 0 && (
+        {/* 내 오늘 비공개 글 */}
+        {phase !== "REVEALING" && myTodayPosts.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-white/25 px-1">오늘 새벽 · 내 기록</h2>
             <div className="space-y-3">
               {myTodayPosts.map((post) => <PostCard key={post.id} post={post} />)}
             </div>
-            <p className="text-xs text-stone-300 dark:text-white/20 text-center pt-1">내일 아침 06:00 이후 모두에게 공개됩니다</p>
+            <p className="text-xs text-stone-300 dark:text-white/20 text-center pt-1">오늘 아침 06:00 이후 모두에게 공개됩니다</p>
           </section>
         )}
 
+        {/* 공개된 글 목록 */}
         {publicPosts.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-white/25 px-1">새벽의 기록들</h2>
