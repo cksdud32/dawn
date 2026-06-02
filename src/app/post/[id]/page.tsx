@@ -5,6 +5,7 @@ import { isPostPublic, areCommentsEnabled, getCurrentPhase, minutesUntilClose, s
 import { MoodBadge } from "@/components/MoodBadge";
 import { CommentSection } from "@/components/CommentSection";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
@@ -98,6 +99,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           dawnDate={post.dawnDate}
         />
       </div>
+      <Footer />
     </div>
   );
 }

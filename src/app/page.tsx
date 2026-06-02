@@ -9,6 +9,7 @@ import { PostCard } from "@/components/PostCard";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { RevealingState } from "@/components/RevealingState";
 import { EveningBanner } from "@/components/EveningBanner";
+import { Footer } from "@/components/Footer";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -112,6 +113,7 @@ export default async function HomePage() {
           </section>
         )}
       </main>
+      <Footer />
     </div>
   );
 }
