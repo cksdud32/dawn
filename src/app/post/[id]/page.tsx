@@ -96,7 +96,6 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           postId={post.id}
           initialComments={comments}
           commentsEnabled={commentsEnabled}
-          dawnDate={post.dawnDate}
         />
       </div>
       <Footer />

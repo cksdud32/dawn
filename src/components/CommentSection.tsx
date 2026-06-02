@@ -16,10 +16,9 @@ interface CommentSectionProps {
   postId: string;
   initialComments: Comment[];
   commentsEnabled: boolean;
-  dawnDate: string;
 }
 
-export function CommentSection({ postId, initialComments, commentsEnabled, dawnDate }: CommentSectionProps) {
+export function CommentSection({ postId, initialComments, commentsEnabled }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -38,8 +37,9 @@ export function CommentSection({ postId, initialComments, commentsEnabled, dawnD
   }, []);
 
   const nearMidnight = kstMinutes >= 23 * 60 + 50;
+  const isDawn = Math.floor(kstMinutes / 60) < 6;
 
-  async function submitComment(e: React.FormEvent) {
+  async function submitComment(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!text.trim()) return;
     setSubmitting(true);
@@ -59,33 +59,14 @@ export function CommentSection({ postId, initialComments, commentsEnabled, dawnD
     }
   }
 
-  if (!commentsEnabled) {
-    const nowHour = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" })).getHours();
-    const isDawn = nowHour >= 0 && nowHour < 6;
-    return (
-      <div className="border-t border-line pt-6 text-center space-y-1">
-        {isDawn ? (
-          <>
-            <p className="text-fg4 text-sm">새벽에는 댓글을 달 수 없어요</p>
-            <p className="text-fg5 text-xs">06:00 이후 다시 열립니다</p>
-          </>
-        ) : (
-          <>
-            <p className="text-fg4 text-sm">댓글 창이 닫혔습니다</p>
-            <p className="text-fg5 text-xs">공개 후 2일 이내에만 작성할 수 있어요</p>
-          </>
-        )}
-      </div>
-    );
-  }
-
   return (
     <section className="border-t border-line pt-6 space-y-5">
       <h2 className="text-xs uppercase tracking-widest text-fg4">
         댓글 {comments.length > 0 ? comments.length : ""}
       </h2>
 
-      {comments.length === 0 && (
+      {/* 기존 댓글 — 항상 표시 */}
+      {comments.length === 0 && commentsEnabled && (
         <p className="text-fg4 text-sm py-4 text-center">아직 댓글이 없어요</p>
       )}
 
@@ -105,33 +86,48 @@ export function CommentSection({ postId, initialComments, commentsEnabled, dawnD
         ))}
       </div>
 
-      {nearMidnight && (
-        <div className="rounded-xl bg-amber-400/5 border border-amber-400/20 px-4 py-2.5 text-xs text-amber-600 text-center">
-          자정(00:00)부터는 댓글을 달 수 없어요
+      {/* 댓글 입력 — 가능 여부에 따라 폼 또는 안내 */}
+      {commentsEnabled ? (
+        <>
+          {nearMidnight && (
+            <div className="rounded-xl bg-amber-400/5 border border-amber-400/20 px-4 py-2.5 text-xs text-amber-600 text-center">
+              자정(00:00)부터는 댓글을 달 수 없어요
+            </div>
+          )}
+          <form onSubmit={submitComment} className="space-y-2">
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="댓글을 남겨보세요…"
+              maxLength={300}
+              rows={3}
+              className="w-full bg-input border border-line rounded-xl px-4 py-3 text-fg2 placeholder-fg5 resize-none focus-border-line text-sm"
+            />
+            {error && <p className="text-red-500 text-xs">{error}</p>}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-fg5">{text.length} / 300</span>
+              <button type="submit" disabled={submitting || !text.trim()}
+                className="px-4 py-2 rounded-xl bg-card border border-line text-fg3 hover:bg-card-hover hover:text-fg2 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                {submitting ? "저장 중…" : "남기기"}
+              </button>
+            </div>
+          </form>
+        </>
+      ) : (
+        <div className="text-center space-y-1 pt-2">
+          {isDawn ? (
+            <>
+              <p className="text-fg4 text-sm">새벽에는 댓글을 달 수 없어요</p>
+              <p className="text-fg5 text-xs">06:00 이후 다시 열립니다</p>
+            </>
+          ) : (
+            <>
+              <p className="text-fg4 text-sm">댓글 창이 닫혔습니다</p>
+              <p className="text-fg5 text-xs">공개 후 2일 이내에만 작성할 수 있어요</p>
+            </>
+          )}
         </div>
       )}
-
-      <form onSubmit={submitComment} className="space-y-2">
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="댓글을 남겨보세요…"
-          maxLength={300}
-          rows={3}
-          className="w-full bg-input border border-line rounded-xl px-4 py-3 text-fg2 placeholder-fg5 resize-none focus-border-line text-sm"
-        />
-        {error && <p className="text-red-500 text-xs">{error}</p>}
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-fg5">{text.length} / 300</span>
-          <button
-            type="submit"
-            disabled={submitting || !text.trim()}
-            className="px-4 py-2 rounded-xl bg-card border border-line text-fg3 hover:bg-card-hover hover:text-fg2 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {submitting ? "저장 중…" : "남기기"}
-          </button>
-        </div>
-      </form>
     </section>
   );
 }
