@@ -18,7 +18,7 @@ export function Footer() {
             Instagram @cksdud3
           </a>
         </p>
-        <p className="text-xs text-fg5">© 2026 dawn · cksdud3. All rights reserved.</p>
+        <p className="text-xs text-fg5">© 2026 여명 · cksdud3. All rights reserved.</p>
       </div>
     </footer>
   );
