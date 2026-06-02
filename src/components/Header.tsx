@@ -13,7 +13,7 @@ export function Header({ anonName, phase, minutesUntilClose, secondsUntilOpen, s
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-header backdrop-blur-md">
       <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="text-lg font-semibold tracking-tight text-fg1 hover:text-fg1 transition-colors">
+        <Link href="/" className="text-xl tracking-tight text-fg1 hover:text-fg1 transition-colors" style={{ fontFamily: "'Maru Buri', serif" }}>
           여명
         </Link>
         <div className="flex items-center gap-4">

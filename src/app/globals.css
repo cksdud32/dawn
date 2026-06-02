@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Maru+Buri:wght@400&display=swap");
 
 /* CSS 변수 초기값 (라이트 모드) — ThemeProvider가 JS로 실시간 업데이트 */
 :root {
