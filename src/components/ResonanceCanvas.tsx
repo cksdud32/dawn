@@ -84,7 +84,7 @@ export default function ResonanceCanvas({ resonances }: { resonances: ResonanceI
       >
         <p
           style={{
-            color: C.dim(0.38),
+            color: C.dim(0.52),
             fontSize: "0.82rem",
             fontWeight: 300,
             lineHeight: 2,
@@ -101,7 +101,7 @@ export default function ResonanceCanvas({ resonances }: { resonances: ResonanceI
           당신이 고른 단어들이 잠시 머무는 공간이다.
           <br />
           <br />
-          <span style={{ color: C.dim(0.22) }}>
+          <span style={{ color: C.dim(0.28) }}>
             아무도 맥락을 모른다.
             <br />
             키워드만 남는다.
@@ -141,10 +141,10 @@ export default function ResonanceCanvas({ resonances }: { resonances: ResonanceI
               gap: "0.6rem",
             }}
           >
-            <p style={{ color: C.dim(0.1), fontSize: "0.78rem", fontWeight: 300, letterSpacing: "0.04em" }}>
+            <p style={{ color: C.dim(0.2), fontSize: "0.78rem", fontWeight: 300, letterSpacing: "0.04em" }}>
               아직 남겨진 말이 없습니다.
             </p>
-            <p style={{ color: C.dim(0.06), fontSize: "0.65rem", fontWeight: 300 }}>
+            <p style={{ color: C.dim(0.12), fontSize: "0.65rem", fontWeight: 300 }}>
               글이 사라질 때 단어가 이곳에 남습니다.
             </p>
           </div>
@@ -193,10 +193,10 @@ export default function ResonanceCanvas({ resonances }: { resonances: ResonanceI
         />
         <p
           style={{
-            color: C.dim(0.2),
+            color: C.dim(0.36),
             fontSize: "0.75rem",
             fontWeight: 300,
-            letterSpacing: "0.02em",
+            letterSpacing: "0.04em",
             lineHeight: 1.7,
           }}
         >
@@ -205,7 +205,7 @@ export default function ResonanceCanvas({ resonances }: { resonances: ResonanceI
         <Link
           href="/write"
           style={{
-            color: C.dim(0.14),
+            color: C.dim(0.22),
             fontSize: "0.7rem",
             fontWeight: 300,
             letterSpacing: "0.08em",
