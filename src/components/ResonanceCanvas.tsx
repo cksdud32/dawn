@@ -77,7 +77,7 @@ export default function ResonanceCanvas({ resonances }: { resonances: ResonanceI
       {/* ── ① 서술형 소개 ── */}
       <section
         style={{
-          padding: "1.5rem 2.5rem 2rem",
+          padding: "1.5rem 2.5rem 2.5rem",
           flexShrink: 0,
           maxWidth: "38rem",
         }}
@@ -87,27 +87,43 @@ export default function ResonanceCanvas({ resonances }: { resonances: ResonanceI
             color: C.dim(0.52),
             fontSize: "0.82rem",
             fontWeight: 300,
-            lineHeight: 2,
+            lineHeight: 2.15,
             letterSpacing: "0.02em",
+            marginBottom: "1.5rem",
           }}
         >
           감정은 사라진다.
           <br />
           하지만 완전히는 아니다.
-          <br />
-          <br />
+        </p>
+        <p
+          style={{
+            color: C.dim(0.52),
+            fontSize: "0.82rem",
+            fontWeight: 300,
+            lineHeight: 2.15,
+            letterSpacing: "0.02em",
+            marginBottom: "1.5rem",
+          }}
+        >
           잔향은 글이 지워진 뒤에도
           <br />
           당신이 고른 단어들이 잠시 머무는 공간이다.
+        </p>
+        <p
+          style={{
+            color: C.dim(0.28),
+            fontSize: "0.82rem",
+            fontWeight: 300,
+            lineHeight: 2.15,
+            letterSpacing: "0.02em",
+          }}
+        >
+          아무도 맥락을 모른다.
           <br />
+          키워드만 남는다.
           <br />
-          <span style={{ color: C.dim(0.28) }}>
-            아무도 맥락을 모른다.
-            <br />
-            키워드만 남는다.
-            <br />
-            2주 뒤, 그것도 사라진다.
-          </span>
+          2주 뒤, 그것도 사라진다.
         </p>
       </section>
 
