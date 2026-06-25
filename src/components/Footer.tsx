@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function Footer() {
   return (
     <footer className="border-t border-line mt-16 py-10">
@@ -6,6 +8,11 @@ export function Footer() {
           새벽 00:00~05:00에 익명으로 감정을 기록하고, 아침 06:00에 모두에게 공개됩니다.
           <br />
           댓글은 공개 후 2일간 작성 가능하며 (새벽 시간 제외), 모든 기록은 7일 후 자동 삭제됩니다.
+        </p>
+        <p className="text-xs text-fg5">
+          <Link href="/resonance" className="hover:text-fg3 transition-colors underline underline-offset-2">
+            잔향 — 사라진 기록의 흔적
+          </Link>
         </p>
         <p className="text-xs text-fg5">
           문의 ·{" "}
