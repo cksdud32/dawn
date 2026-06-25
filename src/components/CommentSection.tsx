@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
@@ -16,21 +16,30 @@ interface CommentSectionProps {
   postId: string;
   initialComments: Comment[];
   commentsEnabled: boolean;
-  dawnDate: string;
 }
 
-export function CommentSection({
-  postId,
-  initialComments,
-  commentsEnabled,
-  dawnDate,
-}: CommentSectionProps) {
+export function CommentSection({ postId, initialComments, commentsEnabled }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [kstMinutes, setKstMinutes] = useState(() => {
+    const kst = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+    return kst.getHours() * 60 + kst.getMinutes();
+  });
 
-  async function submitComment(e: React.FormEvent) {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const kst = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+      setKstMinutes(kst.getHours() * 60 + kst.getMinutes());
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const nearMidnight = kstMinutes >= 23 * 60 + 50;
+  const isDawn = Math.floor(kstMinutes / 60) < 6;
+
+  async function submitComment(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!text.trim()) return;
     setSubmitting(true);
@@ -42,10 +51,7 @@ export function CommentSection({
         body: JSON.stringify({ content: text }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "오류가 발생했습니다.");
-        return;
-      }
+      if (!res.ok) { setError(data.error ?? "오류가 발생했습니다."); return; }
       setComments((prev) => [...prev, data.comment]);
       setText("");
     } finally {
@@ -53,60 +59,75 @@ export function CommentSection({
     }
   }
 
-  if (!commentsEnabled) {
-    return (
-      <div className="border-t border-white/8 pt-6 text-center">
-        <p className="text-white/25 text-sm">댓글은 공개 이후 작성할 수 있습니다</p>
-        <p className="text-white/15 text-xs mt-1">{dawnDate} 다음날 06:00 이후</p>
-      </div>
-    );
-  }
-
   return (
-    <section className="border-t border-white/8 pt-6 space-y-5">
-      <h2 className="text-xs uppercase tracking-widest text-white/25">댓글 {comments.length > 0 ? comments.length : ""}</h2>
+    <section className="border-t border-line pt-6 space-y-5">
+      <h2 className="text-xs uppercase tracking-widest text-fg4">
+        댓글 {comments.length > 0 ? comments.length : ""}
+      </h2>
 
-      {comments.length === 0 && (
-        <p className="text-white/25 text-sm py-4 text-center">아직 댓글이 없어요</p>
+      {/* 기존 댓글 — 항상 표시 */}
+      {comments.length === 0 && commentsEnabled && (
+        <p className="text-fg4 text-sm py-4 text-center">아직 댓글이 없어요</p>
       )}
 
       <div className="space-y-3">
         {comments.map((c) => (
-          <div key={c.id} className="rounded-xl bg-white/[0.03] border border-white/8 px-4 py-3 space-y-1">
+          <div key={c.id} className="rounded-xl bg-card border border-line px-4 py-3 space-y-1">
             <div className="flex items-center justify-between">
-              <span className={`text-xs ${c.isOwn ? "text-indigo-300/60" : "text-white/30"}`}>
+              <span className={`text-xs ${c.isOwn ? "text-indigo-500" : "text-fg4"}`}>
                 {c.isOwn ? "나" : c.anonName}
               </span>
-              <span className="text-xs text-white/20">
+              <span className="text-xs text-fg5">
                 {format(new Date(c.createdAt), "HH:mm", { locale: ko })}
               </span>
             </div>
-            <p className="text-white/65 text-sm leading-relaxed">{c.content}</p>
+            <p className="text-fg2 text-sm leading-relaxed">{c.content}</p>
           </div>
         ))}
       </div>
 
-      <form onSubmit={submitComment} className="space-y-2">
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="댓글을 남겨보세요…"
-          maxLength={300}
-          rows={3}
-          className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white/70 placeholder-white/20 resize-none focus:outline-none focus:border-white/20 text-sm"
-        />
-        {error && <p className="text-red-400/70 text-xs">{error}</p>}
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-white/20">{text.length} / 300</span>
-          <button
-            type="submit"
-            disabled={submitting || !text.trim()}
-            className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 hover:text-white/70 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {submitting ? "저장 중…" : "남기기"}
-          </button>
+      {/* 댓글 입력 — 가능 여부에 따라 폼 또는 안내 */}
+      {commentsEnabled ? (
+        <>
+          {nearMidnight && (
+            <div className="rounded-xl bg-amber-400/5 border border-amber-400/20 px-4 py-2.5 text-xs text-amber-600 text-center">
+              자정(00:00)부터는 댓글을 달 수 없어요
+            </div>
+          )}
+          <form onSubmit={submitComment} className="space-y-2">
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="댓글을 남겨보세요…"
+              maxLength={300}
+              rows={3}
+              className="w-full bg-input border border-line rounded-xl px-4 py-3 text-fg2 placeholder-fg5 resize-none focus-border-line text-sm"
+            />
+            {error && <p className="text-red-500 text-xs">{error}</p>}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-fg5">{text.length} / 300</span>
+              <button type="submit" disabled={submitting || !text.trim()}
+                className="px-4 py-2 rounded-xl bg-card border border-line text-fg3 hover:bg-card-hover hover:text-fg2 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                {submitting ? "저장 중…" : "남기기"}
+              </button>
+            </div>
+          </form>
+        </>
+      ) : (
+        <div className="text-center space-y-1 pt-2">
+          {isDawn ? (
+            <>
+              <p className="text-fg4 text-sm">새벽에는 댓글을 달 수 없어요</p>
+              <p className="text-fg5 text-xs">06:00 이후 다시 열립니다</p>
+            </>
+          ) : (
+            <>
+              <p className="text-fg4 text-sm">댓글 창이 닫혔습니다</p>
+              <p className="text-fg5 text-xs">공개 후 2일 이내에만 작성할 수 있어요</p>
+            </>
+          )}
         </div>
-      </form>
+      )}
     </section>
   );
 }

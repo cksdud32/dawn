@@ -3,6 +3,16 @@ import { getOrCreateSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { isWritingWindow, getKSTDate, isPostPublic } from "@/lib/time";
 
+function sanitizeKeywords(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((k): k is string => typeof k === "string")
+    .map((k) => k.trim())
+    .filter((k) => k.length > 0 && k.length <= 15)
+    .filter((k, i, arr) => arr.indexOf(k) === i)
+    .slice(0, 5);
+}
+
 export async function GET(req: NextRequest) {
   const session = await getOrCreateSession();
   const { searchParams } = new URL(req.url);
@@ -39,6 +49,7 @@ export async function GET(req: NextRequest) {
         mood: post.mood,
         musicTitle: post.musicTitle,
         musicArtist: post.musicArtist,
+        keywords: post.keywords,
         dawnDate: post.dawnDate,
         createdAt: post.createdAt,
         isOwn,
@@ -62,7 +73,7 @@ export async function POST(req: NextRequest) {
 
   const session = await getOrCreateSession();
   const body = await req.json();
-  const { content, mood, musicTitle, musicArtist } = body;
+  const { content, mood, musicTitle, musicArtist, keywords: rawKeywords } = body;
 
   if (!content || typeof content !== "string" || content.trim().length === 0) {
     return NextResponse.json({ error: "내용을 입력해주세요." }, { status: 400 });
@@ -71,7 +82,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "1000자 이내로 작성해주세요." }, { status: 400 });
   }
 
+  const keywords = sanitizeKeywords(rawKeywords);
+
   const dawnDate = getKSTDate();
+
+  // 오늘 새벽 이미 쓴 글이 있으면 차단
+  const existing = await prisma.post.findFirst({
+    where: { userId: session.userId, dawnDate },
+  });
+  if (existing) {
+    return NextResponse.json(
+      { error: "오늘 새벽에는 이미 기록했습니다.", existingId: existing.id },
+      { status: 409 }
+    );
+  }
 
   const post = await prisma.post.create({
     data: {
@@ -80,6 +104,7 @@ export async function POST(req: NextRequest) {
       mood: mood ?? null,
       musicTitle: musicTitle?.trim() || null,
       musicArtist: musicArtist?.trim() || null,
+      keywords,
       dawnDate,
     },
     select: {
@@ -88,6 +113,7 @@ export async function POST(req: NextRequest) {
       mood: true,
       musicTitle: true,
       musicArtist: true,
+      keywords: true,
       dawnDate: true,
       createdAt: true,
     },
