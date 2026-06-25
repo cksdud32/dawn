@@ -24,6 +24,7 @@ model Post {
   mood        String?
   musicTitle  String?
   musicArtist String?
+  keywords    String[]  @default([])
   dawnDate    String
   createdAt   DateTime  @default(now())
   comments    Comment[]
@@ -37,4 +38,12 @@ model Comment {
   user      User     @relation(fields: [userId], references: [id])
   content   String
   createdAt DateTime @default(now())
+}
+
+model Resonance {
+  id           String   @id @default(cuid())
+  keyword      String
+  sourcePostId String?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
 }

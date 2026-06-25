@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MOODS, MoodValue } from "@/components/MoodBadge";
+import ResonanceKeywords from "@/components/ResonanceKeywords";
 
 interface ExistingPost {
   id: string;
@@ -10,6 +11,7 @@ interface ExistingPost {
   mood: string | null;
   musicTitle: string | null;
   musicArtist: string | null;
+  keywords: string[];
 }
 
 export default function WritePage() {
@@ -17,11 +19,13 @@ export default function WritePage() {
   const [phase, setPhase] = useState<"WRITING" | "LOCKED" | null>(null);
   const [existing, setExisting] = useState<ExistingPost | null | "none">(null);
   const [mode, setMode] = useState<"write" | "edit">("write");
+  const [step, setStep] = useState<"write" | "keywords">("write");
 
   const [content, setContent] = useState("");
   const [mood, setMood] = useState<MoodValue | "">("");
   const [musicTitle, setMusicTitle] = useState("");
   const [musicArtist, setMusicArtist] = useState("");
+  const [keywords, setKeywords] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,7 +35,6 @@ export default function WritePage() {
       .then(async (data) => {
         setPhase(data.phase);
         if (data.phase === "WRITING") {
-          // 오늘 새벽 기존 글 확인
           const res = await fetch(`/api/posts?date=${data.kstDate}`);
           const json = await res.json();
           const mine = json.posts?.find((p: ExistingPost & { isOwn: boolean }) => p.isOwn);
@@ -42,6 +45,7 @@ export default function WritePage() {
             setMood((mine.mood as MoodValue) ?? "");
             setMusicTitle(mine.musicTitle ?? "");
             setMusicArtist(mine.musicArtist ?? "");
+            setKeywords(mine.keywords ?? []);
           } else {
             setExisting("none");
           }
@@ -49,9 +53,14 @@ export default function WritePage() {
       });
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleNext(e: React.FormEvent) {
     e.preventDefault();
     if (!content.trim()) return;
+    setStep("keywords");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleSubmit() {
     setSubmitting(true);
     setError("");
     try {
@@ -62,10 +71,19 @@ export default function WritePage() {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, mood: mood || null, musicTitle: musicTitle || null, musicArtist: musicArtist || null }),
+        body: JSON.stringify({
+          content,
+          mood: mood || null,
+          musicTitle: musicTitle || null,
+          musicArtist: musicArtist || null,
+          keywords,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "오류가 발생했습니다."); return; }
+      if (!res.ok) {
+        setError(data.error ?? "오류가 발생했습니다.");
+        return;
+      }
       router.push("/");
     } finally {
       setSubmitting(false);
@@ -79,12 +97,21 @@ export default function WritePage() {
     if (res.ok) {
       setExisting("none");
       setMode("write");
-      setContent(""); setMood(""); setMusicTitle(""); setMusicArtist("");
+      setContent("");
+      setMood("");
+      setMusicTitle("");
+      setMusicArtist("");
+      setKeywords([]);
+      setStep("write");
     }
   }
 
   if (phase === null || existing === null) {
-    return <div className="min-h-screen bg-surface flex items-center justify-center"><span className="text-fg4 text-sm">로딩 중…</span></div>;
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <span className="text-fg4 text-sm">로딩 중…</span>
+      </div>
+    );
   }
 
   if (phase === "LOCKED") {
@@ -93,75 +120,147 @@ export default function WritePage() {
         <p className="text-4xl opacity-20">🔒</p>
         <p className="text-fg3 text-base">지금은 글을 쓸 수 없어요</p>
         <p className="text-fg4 text-sm">새벽 00:00 ~ 05:00 KST 사이에만 기록할 수 있습니다</p>
-        <button onClick={() => router.push("/")} className="mt-4 text-sm text-fg4 hover:text-fg2 underline underline-offset-4">돌아가기</button>
+        <button
+          onClick={() => router.push("/")}
+          className="mt-4 text-sm text-fg4 hover:text-fg2 underline underline-offset-4"
+        >
+          돌아가기
+        </button>
       </div>
     );
   }
 
+  /* ── Step 1: 글 작성 ── */
+  if (step === "write") {
+    return (
+      <div className="min-h-screen bg-surface text-fg1">
+        <div className="max-w-xl mx-auto px-4 py-12">
+          <button
+            onClick={() => router.back()}
+            className="text-sm text-fg4 hover:text-fg2 mb-8 block"
+          >
+            ← 돌아가기
+          </button>
+
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-xl font-light text-fg3">
+              {mode === "edit" ? "오늘 새벽 기록 수정" : "새벽 기록"}
+            </h1>
+            {mode === "edit" && (
+              <button
+                onClick={handleDelete}
+                className="text-xs text-red-400 hover:text-red-500 underline underline-offset-2"
+              >
+                삭제하고 새로 쓰기
+              </button>
+            )}
+          </div>
+
+          <form onSubmit={handleNext} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-xs text-fg4 uppercase tracking-widest">감정 (선택)</label>
+              <div className="flex flex-wrap gap-2">
+                {MOODS.map((m) => (
+                  <button
+                    key={m.value}
+                    type="button"
+                    onClick={() => setMood(mood === m.value ? "" : (m.value as MoodValue))}
+                    className={`text-sm px-3 py-1.5 rounded-xl border transition-colors ${
+                      mood === m.value
+                        ? "bg-card-hover border-line text-fg1"
+                        : "bg-transparent border-line text-fg4 hover:text-fg2"
+                    }`}
+                  >
+                    {m.emoji} {m.value}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-fg4 uppercase tracking-widest">기록</label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="지금 이 순간을 적어두세요…"
+                maxLength={1000}
+                rows={8}
+                className="w-full bg-input border border-line rounded-xl px-4 py-3 text-fg2 placeholder-fg5 resize-none focus-border-line text-[15px] leading-relaxed font-light"
+              />
+              <div className="text-right text-xs text-fg5">{content.length} / 1000</div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-fg4 uppercase tracking-widest">지금 듣는 음악 (선택)</label>
+              <div className="flex gap-2">
+                <input
+                  value={musicTitle}
+                  onChange={(e) => setMusicTitle(e.target.value)}
+                  placeholder="곡 제목"
+                  maxLength={100}
+                  className="flex-1 bg-input border border-line rounded-xl px-4 py-2.5 text-fg2 placeholder-fg5 focus-border-line text-sm"
+                />
+                <input
+                  value={musicArtist}
+                  onChange={(e) => setMusicArtist(e.target.value)}
+                  placeholder="아티스트"
+                  maxLength={60}
+                  className="w-32 bg-input border border-line rounded-xl px-4 py-2.5 text-fg2 placeholder-fg5 focus-border-line text-sm"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!content.trim()}
+              className="w-full py-3 rounded-xl bg-amber-400/15 border border-amber-400/25 text-amber-600 hover:bg-amber-400/25 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              다음 →
+            </button>
+
+            <p className="text-center text-xs text-fg5">아침 06:00 이후 모두에게 공개됩니다</p>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Step 2: 잔향 키워드 ── */
   return (
     <div className="min-h-screen bg-surface text-fg1">
-      <div className="max-w-xl mx-auto px-4 py-12">
-        <button onClick={() => router.back()} className="text-sm text-fg4 hover:text-fg2 mb-8 block">← 돌아가기</button>
+      <div className="max-w-xl mx-auto px-4 py-12 flex flex-col min-h-screen">
+        <button
+          onClick={() => setStep("write")}
+          className="text-sm text-fg4 hover:text-fg2 mb-16 block self-start"
+        >
+          ← 기록으로 돌아가기
+        </button>
 
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-xl font-light text-fg3">
-            {mode === "edit" ? "오늘 새벽 기록 수정" : "새벽 기록"}
-          </h1>
-          {mode === "edit" && (
-            <button
-              onClick={handleDelete}
-              className="text-xs text-red-400 hover:text-red-500 underline underline-offset-2"
-            >
-              삭제하고 새로 쓰기
-            </button>
-          )}
+        <div className="flex-1 flex flex-col justify-center">
+          <ResonanceKeywords keywords={keywords} onChange={setKeywords} />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs text-fg4 uppercase tracking-widest">감정 (선택)</label>
-            <div className="flex flex-wrap gap-2">
-              {MOODS.map((m) => (
-                <button key={m.value} type="button"
-                  onClick={() => setMood(mood === m.value ? "" : m.value as MoodValue)}
-                  className={`text-sm px-3 py-1.5 rounded-xl border transition-colors ${
-                    mood === m.value ? "bg-card-hover border-line text-fg1" : "bg-transparent border-line text-fg4 hover:text-fg2"
-                  }`}
-                >
-                  {m.emoji} {m.value}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="pt-16 space-y-4">
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-          <div className="space-y-2">
-            <label className="text-xs text-fg4 uppercase tracking-widest">기록</label>
-            <textarea value={content} onChange={(e) => setContent(e.target.value)}
-              placeholder="지금 이 순간을 적어두세요…" maxLength={1000} rows={8}
-              className="w-full bg-input border border-line rounded-xl px-4 py-3 text-fg2 placeholder-fg5 resize-none focus-border-line text-[15px] leading-relaxed font-light"
-            />
-            <div className="text-right text-xs text-fg5">{content.length} / 1000</div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs text-fg4 uppercase tracking-widest">지금 듣는 음악 (선택)</label>
-            <div className="flex gap-2">
-              <input value={musicTitle} onChange={(e) => setMusicTitle(e.target.value)} placeholder="곡 제목" maxLength={100}
-                className="flex-1 bg-input border border-line rounded-xl px-4 py-2.5 text-fg2 placeholder-fg5 focus-border-line text-sm" />
-              <input value={musicArtist} onChange={(e) => setMusicArtist(e.target.value)} placeholder="아티스트" maxLength={60}
-                className="w-32 bg-input border border-line rounded-xl px-4 py-2.5 text-fg2 placeholder-fg5 focus-border-line text-sm" />
-            </div>
-          </div>
-
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-
-          <button type="submit" disabled={submitting || !content.trim()}
-            className="w-full py-3 rounded-xl bg-amber-400/15 border border-amber-400/25 text-amber-600 hover:bg-amber-400/25 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="w-full py-3 rounded-xl bg-amber-400/15 border border-amber-400/25 text-amber-600 hover:bg-amber-400/25 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             {submitting ? "저장 중…" : mode === "edit" ? "수정하기" : "기록하기"}
           </button>
 
-          <p className="text-center text-xs text-fg5">아침 06:00 이후 모두에게 공개됩니다</p>
-        </form>
+          {keywords.length === 0 && (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full text-xs text-fg5 hover:text-fg3 transition-colors py-1"
+            >
+              키워드 없이 기록하기
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -43,6 +43,24 @@ body {
 /* focus border */
 .focus-border-line:focus { border-color: rgb(var(--c-border)); outline: none; }
 
+/* 잔향 키워드 — opacity는 CSS variable로 외부에서 주입, hover만 class가 처리 */
+.resonance-word {
+  opacity: var(--kw-op, 0.5);
+  transition: opacity 2.5s ease;
+  cursor: default;
+  user-select: none;
+  pointer-events: auto;
+  white-space: nowrap;
+  position: absolute;
+  font-weight: 300;
+  letter-spacing: 0.06em;
+  color: rgb(210 207 200);
+}
+.resonance-word:hover {
+  opacity: 0.82;
+  transition: opacity 0.7s ease;
+}
+
 /* 스크롤바 */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

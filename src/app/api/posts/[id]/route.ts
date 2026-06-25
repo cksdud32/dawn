@@ -3,6 +3,16 @@ import { getOrCreateSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { isPostPublic, isWritingWindow } from "@/lib/time";
 
+function sanitizeKeywords(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((k): k is string => typeof k === "string")
+    .map((k) => k.trim())
+    .filter((k) => k.length > 0 && k.length <= 15)
+    .filter((k, i, arr) => arr.indexOf(k) === i)
+    .slice(0, 5);
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -35,6 +45,7 @@ export async function GET(
     post: {
       id: post.id, content: post.content, mood: post.mood,
       musicTitle: post.musicTitle, musicArtist: post.musicArtist,
+      keywords: post.keywords,
       dawnDate: post.dawnDate, createdAt: post.createdAt,
       isOwn, isPublic: public_, commentsEnabled: public_,
       comments: public_
@@ -61,12 +72,14 @@ export async function PATCH(
   if (!isWritingWindow()) return NextResponse.json({ error: "새벽 시간에만 수정할 수 있습니다." }, { status: 403 });
 
   const body = await req.json();
-  const { content, mood, musicTitle, musicArtist } = body;
+  const { content, mood, musicTitle, musicArtist, keywords: rawKeywords } = body;
 
   if (!content || typeof content !== "string" || content.trim().length === 0)
     return NextResponse.json({ error: "내용을 입력해주세요." }, { status: 400 });
   if (content.trim().length > 1000)
     return NextResponse.json({ error: "1000자 이내로 작성해주세요." }, { status: 400 });
+
+  const keywords = sanitizeKeywords(rawKeywords);
 
   const updated = await prisma.post.update({
     where: { id },
@@ -75,6 +88,7 @@ export async function PATCH(
       mood: mood ?? null,
       musicTitle: musicTitle?.trim() || null,
       musicArtist: musicArtist?.trim() || null,
+      keywords,
     },
   });
 
